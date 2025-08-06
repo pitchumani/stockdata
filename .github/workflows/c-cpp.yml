@@ -1,0 +1,23 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+        - src/**
+  pull_request:
+    branches: [ "main" ]
+    paths:
+        - src/**
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install gtest manually
+      run: sudo apt-get install libgtest-dev
+    - uses: actions/checkout@v4
+    - name: build and run tests for c++ programs
+      run: make all
