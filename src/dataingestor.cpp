@@ -1,8 +1,7 @@
 #include "dataingestor.h"
 
 void DataIngestor::Start() {
-	std::vector<std::string> stocks({"AAPL", "AMZN", "MSFT", "MCHP", "INTL"});
-	for (auto& s : stocks) {
+	for (auto& s : symbols) {
 		// create a thread to fetch the stock for every 100ms
 		// detach it, it will stop until stopFetch flag is set
 		std::thread fetchThread(&DataIngestor::FetchStockData, this,
