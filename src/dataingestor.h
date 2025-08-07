@@ -3,6 +3,7 @@
 
 // fetch data and populate the DataManager
 
+#include <atomic>
 #include <iostream>
 #include <thread>
 #include <vector>

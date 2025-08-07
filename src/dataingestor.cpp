@@ -12,7 +12,7 @@ void DataIngestor::Start() {
 }
 
 void DataIngestor::FetchStockData(const std::string &symbol,
-	int interval_ms) {
+								  int interval_ms) {
 	while (!stopFetch.load()) {
 		// thread to get the stock data
 		// simulate the stock fetch for now
@@ -20,7 +20,7 @@ void DataIngestor::FetchStockData(const std::string &symbol,
 		dataManager->AddData(data);
 		std::this_thread::sleep_for(std::chrono::milliseconds(interval_ms));
 	}
-	std::cout << "FetchStockData thread is stopped" << std::endl;
+	//std::cout << "FetchStockData thread is stopped" << std::endl;
 }
 
 void DataIngestor::Stop() {

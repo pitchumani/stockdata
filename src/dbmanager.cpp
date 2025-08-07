@@ -11,8 +11,16 @@ bool DatabaseManager::Connect() {
 }
 
 void DatabaseManager::Close() {
+	if (writerThread.joinable()) {
+		// Push sentinel value to queue to signal shutdown
+		if (dataManager) {
+			dataManager->AddData(StockDataPoint("SHUTDOWN", 0, 0, ""));
+		}
+		writerThread.join();
+	}
 	if (db) {
 		sqlite3_close(db);
+		db = nullptr;
 	}
 }
 
@@ -59,21 +67,21 @@ void DatabaseManager::insertData(const StockDataPoint& data) {
 }
 
 void DatabaseManager::WriterThread() {
-	while (true) {
-		struct StockDataPoint data = dataManager->GetData();
-		// check for a special sentinel data to signal shutdown
-		// if (data.Symbol == "SHUTDOWN") {
-		//     break;
-		// }
-		insertData(data);
-		std::cout << "WriterThread: inserted data" << std::endl;
-	}
-
+    while (true) {
+        std::optional<StockDataPoint> data = dataManager->GetData();
+        if (data.has_value()) {
+            if (data->Symbol == "SHUTDOWN") {
+                break;
+            }
+            insertData(data.value());
+        }
+    }
 }
 
 void DatabaseManager::StartWriter() {
-	// start the writer thread
-	std::thread writer(&DatabaseManager::WriterThread, this);
-	writer.detach();
-	std::cout << "DBMgr: Started writer thread" << std::endl;
+    if (writerThread.joinable()) {
+        // Already running
+        return;
+    }
+    writerThread = std::thread(&DatabaseManager::WriterThread, this);
 }
