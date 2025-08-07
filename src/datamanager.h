@@ -6,6 +6,7 @@
 #include <ctime>   // time() to see srand()
 #include <iomanip> // put_time()
 #include <mutex>
+#include <optional>
 #include <queue>
 #include <random>
 #include <sstream>
@@ -40,6 +41,7 @@ public:
 };
 
 class DataManager {
+protected:
 	std::queue<StockDataPoint> datapoints;
 	// helper to check if the queue is empty
 	bool isQEmpty();
@@ -56,7 +58,7 @@ public:
 	// add a datapoint, notify any waiting threads
 	void AddData(const StockDataPoint& data);
 	// retrieves the next available data point, block is the queue is empty
-	StockDataPoint GetData();
+	std::optional<StockDataPoint> GetData();
 
 };
 
