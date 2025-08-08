@@ -21,10 +21,10 @@ TEST(DataIngestorTest, StartStopDoesNotCrash) {
     MockDataManager dm;
     DataIngestor ingestor(&dm);
 	EXPECT_EQ(dm.isQEmpty(), true);
+	EXPECT_EQ(ingestor.SymbolsCount(), 5);
     EXPECT_NO_THROW(ingestor.Start());
-	EXPECT_EQ(dm.isQEmpty(), true);
+	EXPECT_EQ(ingestor.FetchThreadsCount(), 5);
     EXPECT_NO_THROW(ingestor.Stop());
-	EXPECT_EQ(dm.isQEmpty(), true);
 }
 
 TEST(DataIngestorTest, FetchStockDataDoesNotCrash) {
@@ -35,7 +35,7 @@ TEST(DataIngestorTest, FetchStockDataDoesNotCrash) {
     std::thread fetch_thread(&DataIngestor::FetchStockData, &ingestor, symbol, 100);
 	// wait for sometime so that fetch_thread can add some data
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	ingestor.Stop();
+	EXPECT_NO_THROW(ingestor.Stop());
     fetch_thread.join();
 	EXPECT_EQ(dm.isQEmpty(), false);
 }

@@ -40,6 +40,7 @@ TEST(DatabaseManagerTest, StartWriterDoesNotCrash) {
 		dm.AddData(StockDataPoint("SHUTDOWN", 0, 0, ""));
 		dbm.Close();
 	}
+	di.Stop();
 	SUCCEED();
 }
 
