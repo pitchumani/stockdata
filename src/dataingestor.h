@@ -17,14 +17,11 @@ class DataIngestor {
 protected:
 	std::vector<std::string> symbols;
 	std::atomic<bool> stopFetch{false};
-
+	std::vector<std::thread> fetchThreads;
+	
 public:
     DataIngestor(DataManager* dmgr) : dataManager(dmgr) {
-		symbols.push_back("AAPL");
-		symbols.push_back("AMZN");
-		symbols.push_back("MSFT");
-		symbols.push_back("MCHP");
-		symbols.push_back("INTL");
+		symbols = {"AAPL", "AMZN", "MSFT", "MCHP", "INTL"};
 	}
 
 	// create and detach a thread for each stock symbol
@@ -33,6 +30,17 @@ public:
 	void FetchStockData(const std::string &symbol, int interval_ms);
 	// signal threads to terminate gracefully
 	void Stop();
+
+	size_t SymbolsCount() {
+		return symbols.size();
+	}
+	size_t FetchThreadsCount() {
+		return fetchThreads.size();
+	}
+	~DataIngestor() {
+		// stop the threads and sync before cleanup
+		Stop();
+	}
 };
 
 #endif  // DATAINGESTOR_H_
