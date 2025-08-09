@@ -3,12 +3,13 @@
 CXX=clang++
 CXXFLAGS=-g3 -std=c++17
 LDFLAGS=-g3 -lsqlite3 -L /usr/local/lib/
-TEST_FLAGS=-pthread --coverage -I /usr/local/include/
+TEST_FLAGS=-I /usr/local/include/
 
 COVERAGE_FLAGS=-fprofile-instr-generate -fcoverage-mapping
 
 SRCDIR := src
 BUILDDIR := build
+COV_BUILDDIR := build/coverage
 
 SRCS := $(wildcard $(SRCDIR)/*.cpp)
 OBJS := $(patsubst $(SRCDIR)/%.cpp,$(BUILDDIR)/%.o,$(SRCS))
@@ -17,54 +18,64 @@ TESTDIR := $(SRCDIR)/test
 TEST_SRCS := $(wildcard $(TESTDIR)/*.cpp)
 TEST_OBJS := $(patsubst $(TESTDIR)/%.cpp,$(BUILDDIR)/%.test.o,$(TEST_SRCS))
 
-TARGET := $(BUILDDIR)/stockr
-TARGET_UNITTEST := $(BUILDDIR)/stockr-unittest
-TARGET_COVERAGE := $(BUILDDIR)/stockr-coverage
+COVERAGE_OBJS := $(patsubst $(SRCDIR)/%.cpp,$(COV_BUILDDIR)/%.o,$(SRCS))
+COVERAGE_TEST_OBJS := $(patsubst $(TESTDIR)/%.cpp,$(COV_BUILDDIR)/%.test.o,$(TEST_SRCS))
+
+# define target names
+TARGET := stockr
+TARGET_UNITTEST := stockr-unittest
+TARGET_COVERAGE := stockr-coverage
 
 $(BUILDDIR):
 	mkdir -p $(BUILDDIR)
 
+$(COV_BUILDDIR):
+	mkdir -p $(COV_BUILDDIR)
+
 $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp | $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
-
 
 $(BUILDDIR)/%.test.o: $(TESTDIR)/%.cpp | $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -I$(SRCDIR) -c $< -o $@
 
-# Remove build/main.o from OBJS when building TEST_TARGET
-FILTERED_OBJS := $(filter-out $(BUILDDIR)/main.o, $(OBJS))
+# CXXFLAGS are updated for coverage
+$(COV_BUILDDIR)/%.o: $(SRCDIR)/%.cpp | $(COV_BUILDDIR)
+	$(CXX) $(CXXFLAGS) $(COVERAGE_FLAGS) -c $< -o $@
 
-$(TARGET): $(OBJS) | $(BUILDDIR)
+$(COV_BUILDDIR)/%.test.o: $(TESTDIR)/%.cpp | $(COV_BUILDDIR)
+	$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -I$(SRCDIR) -c $< -o $@
+
+# Remove build/main.o from OBJS when building test and coverage targets
+FILTERED_OBJS := $(filter-out $(BUILDDIR)/main.o, $(OBJS))
+FILTERED_COVERAGE_OBJS := $(filter-out $(COV_BUILDDIR)/main.o, $(COVERAGE_OBJS))
+
+$(BUILDDIR)/$(TARGET): $(OBJS) | $(BUILDDIR)
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-$(TARGET_UNITTEST): $(TEST_OBJS) $(FILTERED_OBJS) | $(BUILDDIR)
-	echo $(TEST_OBJS)
-	echo $(FILTERED_OBJS)
+$(BUILDDIR)/$(TARGET_UNITTEST): $(TEST_OBJS) $(FILTERED_OBJS) | $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) $(TEST_FLAGS) $^ -lgtest $(LDFLAGS) -o $@
 
-# Coverage build: recompile everything with coverage flags
-coverage_build: CXXFLAGS += $(COVERAGE_FLAGS)
-coverage_build: LDFLAGS += $(COVERAGE_FLAGS)
-coverage_build: clean $(BUILDDIR) $(TEST_OBJS) $(FILTERED_OBJS)
-	$(CXX) $(CXXFLAGS) $(TEST_FLAGS) $(TEST_OBJS) $(FILTERED_OBJS) -lgtest $(LDFLAGS) -o $(TARGET_COVERAGE)
+$(COV_BUILDDIR)/$(TARGET_COVERAGE): $(COVERAGE_TEST_OBJS) $(FILTERED_COVERAGE_OBJS) | $(COV_BUILDDIR)
+	$(CXX) $(CXXFLAGS) $(TEST_FLAGS) $^ --coverage -lgtest $(LDFLAGS) -o $@
 
-.PHONY: all
-all: $(TARGET) $(TARGET_UNITTEST)
+.PHONY: all build test coverage clean
 
-.PHONY: test
-test: $(TARGET_UNITTEST)
-	$(TARGET_UNITTEST)
+# all - build
+all: $(BUILDDIR)/$(TARGET)
 
-.PHONY: coverage
-coverage: coverage_build
-	cd $(BUILDDIR); \
+# build the unittest target and run
+test: $(BUILDDIR)/$(TARGET_UNITTEST)
+	$(BUILDDIR)/$(TARGET_UNITTEST)
+
+# build the coverage target
+coverage: $(COV_BUILDDIR)/$(TARGET_COVERAGE)
+	cd $(COV_BUILDDIR); \
 	rm -f *.profraw *.profdata; \
-	./stockr-coverage; \
+	./$(TARGET_COVERAGE); \
 	llvm-profdata merge -sparse default.profraw -o default.profdata; \
-	llvm-cov show ./stockr-coverage -ignore-filename-regex=".*(googletest|gtest).*"  -instr-profile=default.profdata -format=html -output-dir=coverage_report
-	@echo "Find the coverage report in $(BUILDDIR)/coverage_report/"
+	llvm-cov show ./$(TARGET_COVERAGE) -ignore-filename-regex=".*(googletest|gtest).*" -instr-profile=default.profdata -format=html -output-dir=coverage_report
+	@echo "Find the coverage report in $(COV_BUILDDIR)/coverage_report/"
 
-.PHONY: clean
 clean:
-	rm -rf $(BUILDDIR)
+	rm -rf $(BUILDDIR) $(COV_BUILDDIR)
 
