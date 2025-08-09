@@ -19,5 +19,9 @@ jobs:
     - name: Install gtest manually
       run: sudo apt-get install libgtest-dev
     - uses: actions/checkout@v4
-    - name: build and run tests for c++ programs
+    - name: build the project
       run: make all
+    - name: run unit tests
+      run: make test
+    - name: run coverage
+      run: make coverage

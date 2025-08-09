@@ -21,6 +21,7 @@ timestamp TEXT);
 */
 
 class DatabaseManager {
+	// db connection handle
 	sqlite3* db = nullptr;
 	std::mutex mtx_db;
 	void insertData(const StockDataPoint& data);
@@ -31,6 +32,7 @@ public:
 
 	bool Connect();
 	bool CreateTable();
+	// wait for data (condition variable in DataManager)
 	void WriterThread();
 	void StartWriter();
 	void Close();
