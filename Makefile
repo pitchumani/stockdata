@@ -56,7 +56,7 @@ $(BUILDDIR)/$(TARGET_UNITTEST): $(TEST_OBJS) $(FILTERED_OBJS) | $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) $(TEST_FLAGS) $^ -lgtest $(LDFLAGS) -o $@
 
 $(COV_BUILDDIR)/$(TARGET_COVERAGE): $(COVERAGE_TEST_OBJS) $(FILTERED_COVERAGE_OBJS) | $(COV_BUILDDIR)
-	$(CXX) $(CXXFLAGS) $(TEST_FLAGS) $^ --coverage -lgtest $(LDFLAGS) -o $@
+	$(CXX) $(CXXFLAGS) $(COVERAGE_FLAGS) $(TEST_FLAGS) $^ -lgtest $(LDFLAGS) -o $@
 
 .PHONY: all build test coverage clean
 
