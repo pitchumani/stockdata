@@ -69,10 +69,16 @@ test: $(BUILDDIR)/$(TARGET_UNITTEST)
 
 # build the coverage target
 coverage: $(COV_BUILDDIR)/$(TARGET_COVERAGE)
+	cd $(COV_BUILDDIR) && rm -f *.profraw *.profdata
+	@echo "Run the coverage testing"
+	cd $(COV_BUILDDIR) && ./$(TARGET_COVERAGE)
+	@echo "List the files"
+	cd $(COV_BUILDDIR) && pwd && ls
+	@echo "Merge coverage data"
+	cd $(COV_BUILDDIR) && llvm-profdata merge -sparse default.profraw -o default.profdata; \
+	pwd && ls
+	@echo "Generate coverage report"
 	cd $(COV_BUILDDIR); \
-	rm -f *.profraw *.profdata; \
-	./$(TARGET_COVERAGE); \
-	llvm-profdata merge -sparse default.profraw -o default.profdata; \
 	llvm-cov show ./$(TARGET_COVERAGE) -ignore-filename-regex=".*(googletest|gtest).*" -instr-profile=default.profdata -format=html -output-dir=coverage_report
 	@echo "Find the coverage report in $(COV_BUILDDIR)/coverage_report/"
 
