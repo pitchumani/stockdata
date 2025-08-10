@@ -19,6 +19,12 @@ jobs:
     - name: Install gtest manually
       run: sudo apt-get install libgtest-dev
     - uses: actions/checkout@v4
+    - name: Install llvm
+      uses: KyleMayes/install-llvm-action@v2.0.7
+      with:
+        version: "20.1.4"
+    - name: Verify llvm-profdata version
+      run: llvm-profdata --version
     - name: build the project
       run: make all
     - name: run unit tests
